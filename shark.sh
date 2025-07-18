@@ -5,6 +5,8 @@
 # ------------------------------------------------------------------------------
 # Comments:
 # ------------------------------------------------------------------------------
+# TODO: Fix alignment issue with ctrl +c to exit
+# TODO: fix error message with decrypt.
 # Setup & Config
 
 # Resolve script's directory
@@ -51,10 +53,12 @@ tput cup 0 0
 echo -e "${c}Enter ${m}d ${c}to decrypt a message or anything else to create an encrypted message."
 read -r -p "> " choose
 echo -ne "$reset"
+clear
 if [ "$choose" = d ]; then
     echo -e "${c}Paste the message into the prompt below."
     read -r -p "> " eMessage
-    
+    echo -n "$eMessage" | base64 -d 2>/dev/null | openssl enc -aes-256-cbc -pbkdf2 -d -pass pass:"$KEY" 2>/dev/null
+    exit 0
 fi
 
 echo -e "${g}Type your text (Ctrl+C to exit):${reset}"
@@ -68,12 +72,13 @@ while IFS= read -r -s -n1 CHAR; do
     else
         TEXT="$TEXT$CHAR"
     fi
-    tput cup 2 0
+    tput cup 3 0
     echo -e "${c}Input: ${m}$TEXT${reset}"
     tput cup 4 0
     # Encrypt if TEXT is not empty
     if [ -n "$TEXT" ]; then
         CYPHER=$(encrypt_text "$TEXT" "$KEY")
+        wl-copy "$CYPHER"
         echo -e "${g}Cypher: ${m}$CYPHER${reset}"
     else
         echo -e "${g}Cypher: ${reset}"
