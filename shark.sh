@@ -18,6 +18,7 @@ m=$(tput setaf 5) # Highlights Magenta
 reset=$(tput sgr0) # Reset
 #
 trap 'echo -e "$reset"; exit 0' INT TERM EXIT
+COPY=wl-copy        # Set the clipboard tool
 # ------------------------------------------------------------------------------
 # Functions:
 # Function to encrypt text
@@ -97,7 +98,7 @@ while IFS= read -r -s -n1 CHAR; do
     if [ -n "$TEXT" ]; then
         CYPHER=$(encrypt_text "$TEXT" "$KEY")
         if [ -n "$CYPHER" ]; then
-            echo -n "$CYPHER" | wl-copy 2>/dev/null || true
+            echo -n "$CYPHER" | "$COPY" 2>/dev/null || true
             echo -e "${g}Cypher: ${m}$CYPHER${reset}"
         else
             echo -e "${g}Cypher: ${r}Encryption failed or invalid output${reset}"
