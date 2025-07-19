@@ -23,14 +23,22 @@ trap 'echo -e "$reset"; exit 0' INT TERM EXIT
 # Function to encrypt text
 encrypt_text() {
     # Use OpenSSL to encrypt with AES-256-CBC and output in base64
-    echo -n "$input" | openssl enc -aes-256-cbc -pbkdf2 -base64 -pass pass:"$KEY" 2>/dev/null
+    local input="$1"
+    local key="$2"
+    # Use OpenSSL to encrypt with AES-256-CBC, ensure clean base64 output
+    echo -n "$input" | openssl enc -aes-256-cbc -pbkdf2 -base64 -pass pass:"$key" 2>/dev/null | tr -d '\n' | grep -E '^[A-Za-z0-9+/=]+$'
 }
-
+ 
 # Function to decrypt text
 decrypt_text() {
-    echo -ne "$m"
-    # Use OpenSSL to decrypt with AES-256-CBC and output in base64
-    echo -n "$eMessage" | openssl enc -aes-256-cbc -d -pbkdf2 -base64 -pass pass:"$KEY" 2>/dev/null
+    local input="$1"
+    local key="$2"
+    # Use OpenSSL to decrypt base64-encoded input
+    echo -n "$input" | base64 -d 2>/dev/null | openssl enc -aes-256-cbc -pbkdf2 -d -pass pass:"$key" 2>/dev/null
+    if [ $? -ne 0 ]; then
+        echo -e "${r}Error: Decryption failed (invalid key or corrupted message)${reset}"
+        exit 1
+    fi
 }
 
 # Function to validate key (simple check for non-empty key)
@@ -46,7 +54,7 @@ validate_key() {
 clear
 tput cup 0 0
 echo -e "${c}Enter encryption key:${reset}"
-read -r KEY
+read -r -s KEY
 validate_key "$KEY"
 clear
 
@@ -57,23 +65,45 @@ echo -ne "$reset"
 clear
 # ------------------------------------------------------------------------------
 # Decrypting messages
-# TODO: This is not decrypting text, get no output.
-if [ "$OPT" = d ]; then
+if [ "$OPT" = "d" ]; then
     echo -e "${c}Paste the message into the prompt below."
     read -r -p "> " eMessage
-    decrypt_text        # decrypt function
+    clear
+    tput cup 0 0
+    echo -e "${g}Decrypted message:${reset}"
+    decrypt_text "$eMessage" "$KEY"
+    echo
     exit 0
 fi
 # ------------------------------------------------------------------------------
 # Encrypting messages
-# TODO: Fix, input text is not being printed only last character.
 echo -e "${g}Type your text (Ctrl+C to exit):${reset}"
-while IFS= read -r -n1 input; do
+TEXT=""
+while IFS= read -r -s -n1 CHAR; do
+    # Handle backspace (ASCII 127)
+    if [[ $CHAR == $'\x7f' ]]; then
+        if [ ${#TEXT} -gt 0 ]; then
+            TEXT="${TEXT%?}"
+        fi
+    else
+        TEXT="$TEXT$CHAR"
+    fi
     tput cup 2 0
-    echo -e "${c}Input: ${m}$input${reset}"
+    echo -e "${c}Input: ${g}$TEXT${reset}"
     tput cup 4 0
-    CYPHER=$(encrypt_text)
-    echo -e "${g}Cypher: ${m}$CYPHER${reset}"
-    
+    # Clear the line to prevent leftover text
+    tput el
+    # Encrypt if TEXT is not empty
+    if [ -n "$TEXT" ]; then
+        CYPHER=$(encrypt_text "$TEXT" "$KEY")
+        if [ -n "$CYPHER" ]; then
+            echo -n "$CYPHER" | wl-copy 2>/dev/null || true
+            echo -e "${g}Cypher: ${m}$CYPHER${reset}"
+        else
+            echo -e "${g}Cypher: ${r}Encryption failed or invalid output${reset}"
+        fi
+    else
+        echo -e "${g}Cypher: ${reset}"
+    fi
 done
 exit 0
