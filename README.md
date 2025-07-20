@@ -18,6 +18,10 @@ A fun terminal tool to encrypt text into a ticker-tape of SSL-encrypted gobbledy
 - **Dependencies**:
   - wl-copy or xclip
 
+## Usage
+
+When starting the script Shark will prompt you for a passphrase, enter the passphrase you wish to use. Shark will then prompt you to enter the character `d` to decrypt text or anything else to encrypt text.
+
 ## Installation
 
 ```bash
