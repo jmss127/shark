@@ -6,17 +6,14 @@
 # Comments: An Enigma style encryption and decryption tool for the terminal.
 # ------------------------------------------------------------------------------
 # Setup & Config
-
 # Resolve script's directory
 # SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
 # Color Variables tput
 r=$(tput setaf 1) # Warnings/errors Red
 g=$(tput setaf 2) # Menus/info/success Green
 c=$(tput setaf 6) # Input prompts Cyan
 m=$(tput setaf 5) # Highlights Magenta
 reset=$(tput sgr0) # Reset
-#
 trap 'echo -e "$reset"; exit 0' INT TERM EXIT
 COPY=wl-copy        # Set the clipboard tool
 # ------------------------------------------------------------------------------
@@ -60,7 +57,7 @@ validate_key "$KEY"
 clear
 
 tput cup 0 0
-echo -e "${c}Enter ${m}d ${c}to decrypt a message or anything else to create an encrypted message."
+echo -e "${c}Press ${m}Enter${c} to create an encrypted message, or enter ${m}d ${c}to decrypt a message."
 read -r -p "> " OPT
 echo -ne "$reset"
 clear
